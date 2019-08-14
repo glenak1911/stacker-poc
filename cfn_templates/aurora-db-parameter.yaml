@@ -1,0 +1,99 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  A basic CloudFormation template for RDS Aurora Postgres Parameter Group.
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: RDS Aurora Postgres Parameter Group.
+# Specify RDS Cluster and Parameter Group
+        Parameters:
+          - pmLogConnections
+          - pmLogSisconnections
+          - pmLogDuration
+          - pmLogStatement
+          - pmSharedBuffers
+          - pmWorkMem
+          - pmEffectiveCacheSize
+Parameters:
+  pmLogConnections:
+    Description: Indicates Logs have successful connection.
+    Type: String
+    Default: '1'
+    AllowedValues:
+      - '0'
+      - '1'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmLogDisconnections: 
+    Description: Logs end of a session, including duration.
+    Type: String
+    Default: '1'
+    AllowedValues:
+      - '0'
+      - '1'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmLogDuration:
+    Description: Logs the duration of each completed SQL statement.
+    Type: String
+    Default: '1'
+    AllowedValues:
+      - '0'
+      - '1'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmLogStatement:
+    Description: Sets the type of statements logged.
+    Type: String
+    Default: 'all'
+    AllowedValues:
+      - none
+      - ddl
+      - mod
+      - all  
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmSharedBuffers:
+    Description: (8kB) Sets the number of shared memory buffers used by the server.
+    Type: Number
+    Default: '499712'  # based on r4.large instance type
+    MinValue: '16'
+    MaxValue: '1073741823'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmWorkMem:
+    Description: (kB) Sets the maximum memory to be used for query workspaces.
+    Type: Number
+    Default: '204800' # based on r4.large instance type
+    MinValue: '64'
+    MaxValue: '2147483647'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmEffectiveCacheSize:
+    Description: (8kB) Sets the planners assumption about the size of the disk cache.
+    Type: Number
+    Default: '53125' # based on r4.large instance type
+    MinValue: '1'
+    MaxValue: '2147483647'
+    ConstraintDescription: Must select a valid database instance type.
+
+Resources:
+
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties: 
+      Description: !Ref 'AWS::StackName'
+      Family: aurora-postgresql9.6
+      Parameters:
+        log_connections: !Ref pmLogConnections   
+        log_disconnections: !Ref pmLogDisconnections  
+        log_duration: !Ref pmLogDuration   
+        log_statement: !Ref pmLogStatement       
+        shared_buffers: !Ref pmSharedBuffers                       
+        work_mem: !Ref pmWorkMem                       
+        effective_cache_size: !Ref pmEffectiveCacheSize
+
+Outputs:
+  DBParameterGroup:
+    Description: The name of the DB ParameterGroup.
+    Value: !Ref DBParameterGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-ParameterGroup'

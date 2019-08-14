@@ -1,0 +1,102 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  A basic CloudFormation template for RDS Aurora Cluster ParameterGroups.
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: RDS Aurora Postgres Cluster ParameterGroups prameters.
+# Specify RDS Cluster Parameter Group
+        Parameters:          
+          - pmRdsForceSsl
+          - pmWalBuffers
+          - pmClusterLogConnections
+          - pmClusterLogDestination 
+          - pmClusterLogDisconnection
+          - pmClusterLogRotationSize
+          - pmClusterLogStatement          
+
+Parameters:
+  pmRdsForceSsl:
+    Description: Enforce SSL connections.
+    Type: String
+    Default: '1'
+    AllowedValues:
+      - '1'
+      - '0'
+  pmWalBuffers:
+    Description: (8kB) Sets the number of disk-page buffers in shared memory for WAL.
+    Type: Number
+    Default: '51200' # based on r4.large instance type
+    MinValue: '-1'
+    MaxValue: '262143'
+    ConstraintDescription: Must select a valid DB Cluster Parameter Group.
+
+  pmClusterLogConnections:
+    Description: Indicates Logs have successful connection.
+    Type: String
+    Default: '1'
+    AllowedValues:
+      - '0'
+      - '1'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmClusterLogDisconnections: 
+    Description: Logs end of a session, including duration.
+    Type: String
+    Default: '1'
+    AllowedValues:
+      - '0'
+      - '1'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmClusterLogRotationSize:
+    Description: Indicates  (kB) Automatic log file rotation will occur after N kilobytes.
+    Type: Number
+    MinValue: '0'
+    MaxValue: '2097151'
+    Default: '0'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmClusterLogDestination:
+    Description: Sets the destination for server log output.
+    Type: String
+    Default: 'csvlog'
+    AllowedValues:
+      - 'stderr'
+      - 'csvlog'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+  pmClusterLogStatement:
+    Description: Indicates Logs have successful connection.
+    Type: String
+    Default: 'all'
+    AllowedValues:
+      - 'ddl'
+      - 'mod'
+      - 'all'
+      - 'none'
+    ConstraintDescription: Must select a valid DB Parameter Group.
+
+Resources:
+
+  DBClusterParameterGrp:
+    Type: 'AWS::RDS::DBClusterParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: aurora-postgresql9.6
+      Parameters:
+        rds.force_ssl: !Ref pmRdsForceSsl
+        wal_buffers: !Ref pmWalBuffers
+        log_connections: !Ref pmClusterLogConnections   
+        log_destination: !Ref pmClusterLogDestination  
+        log_disconnections: !Ref pmClusterLogDisconnections
+        log_rotation_size: !Ref pmClusterLogRotationSize
+        log_statement: !Ref pmClusterLogStatement
+  
+Outputs:
+  DBClusterParameterName:
+    Description: The name of the DB Cluster ParameterGroup.
+    Value: !Ref DBClusterParameterGrp
+    Export:
+      Name: !Sub '${AWS::StackName}-DBClusterParameterGroup'
+  

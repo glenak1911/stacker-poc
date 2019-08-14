@@ -1,0 +1,111 @@
+
+---
+namespace: 'test-gk-personal-1'
+
+# tags for resources created in the Slalom AWS Innovation Labs account
+slalom_tags: &slalom_tags
+  Name: ${slalom_name}
+  Manager: ${slalom_manager}
+  Market: ${slalom_market}
+  EngagementOffice: ${slalom_office}
+  Email: ${slalom_email}
+
+# Specifying a stacker bucket, in the event we want to have a centralized bucket for deploying our cloudformation templates
+# independent of the namespace we use
+stacker_bucket: 'glen-test-us-east-1-personal-1'
+#key: 'stack_templates'
+# package_sources:
+#   git:
+#     - uri: git@github.com:zraja83/stacker-cf-templates.git
+#       branch: cleanup-aurora-cf-template
+#       configs: 
+#         - stacker/templates/s3.yaml
+
+stacks:
+  # This stack will provision an S3 bucket for stacker to use to upload
+  # templates. This will also configure the bucket with a bucket policy
+  # allowing CloudFormation in other accounts to fetch templates from it.
+  
+  - name: stacker-aurora-secgrp
+    profile: gknight
+    template_path: cfn_templates/aurora-secgrp.yaml
+    enabled: true
+    locked: false
+    tags:
+      <<: *slalom_tags
+    variables:
+      SubnetIds: ${DBSubnetIds}
+      CidrIp: ${CidrIp}
+      VpcId: ${VpcId}
+
+  - name: stacker-aurora1
+    profile: gknight
+    template_path: cfn_templates/aurora.yaml
+    enabled: true
+    locked: false
+    requires:
+      - stacker-aurora-secgrp
+      - stacker-aurora-dbcluster-parameter
+      - stacker-aurora-db-parameter
+    tags:
+      <<: *slalom_tags
+    variables:
+      DBInstanceClass: ${DBInstanceClass} 
+      DBName: ${DBName} 
+      DBUser: ${DBUser} 
+      DBPassword: ${DBPassword} 
+      DBPort: ${DBPort}
+      DBEngineVer: ${DBEngineVer}
+      DBEngine: ${DBEngine}
+      DBClusterName: ${DBClusterName}
+      DBBackupWindow: ${DBBackupWindow}
+      DBMaintenanceWindow: ${DBMaintenanceWindow}
+      DBEncryption: ${DBEncryption}
+      DBSnapShotID: ${DBSnapShotID}
+      DBEngineMode: ${DBEngineMode}
+      DBSecurityGroup: ${output stacker-aurora-secgrp::DBClusterSecGrpName}
+      DBSubnetGrp: ${output stacker-aurora-secgrp::DBClusterSubnetGroup}
+      #DBSubnetGrp: rds-newyork-innovationlab-us-west-2-dbsubnetgrp
+      #Kmskey: ${Kmskey}
+      DBAllocatedStorage: ${DBAllocatedStorage}
+      DBStorageType: ${DBStorageType}
+      DBIops: ${DBIops}
+      DBBackupRetention: ${DBBackupRetention}
+      DBBackupWindow: ${DBBackupWindow}
+      DBMaintenanceWindow: ${DBMaintenanceWindow}
+      DBMonitoringInterval: ${DBMonitoringInterval}
+      DBClusterParameterGrp: ${output stacker-aurora-dbcluster-parameter::DBClusterParameterName}
+      DBParameterGroup: ${output stacker-aurora-db-parameter::DBParameterGroup}
+
+    
+  - name: stacker-aurora-dbcluster-parameter
+    profile: gknight
+    template_path: cfn_templates/aurora-dbcluster-parameter.yaml
+    enabled: true
+    locked: false
+    tags:
+      <<: *slalom_tags
+    variables:
+      pmRdsForceSsl: ${pm_rds_force_ssl}  
+      pmWalBuffers: ${pm_wal_buffers} 
+      pmClusterLogConnections: ${pmClusterLogConnections}
+      pmClusterLogDestination: ${pmClusterLogDestination}
+      pmClusterLogDisconnections: ${pmClusterLogDisconnections}
+      pmClusterLogRotationSize: ${pmClusterLogRotationSize}
+      pmClusterLogStatement: ${pmClusterLogStatement}
+
+  - name: stacker-aurora-db-parameter
+    profile: gknight
+    template_path: cfn_templates/aurora-db-parameter.yaml
+    enabled: true
+    locked: false
+    tags:
+      <<: *slalom_tags
+    variables:
+      pmLogConnections: ${pm_log_connections} 
+      pmLogDisconnections: ${pm_log_disconnections} 
+      pmLogDuration: ${pm_log_duration} 
+      pmLogStatement: ${pm_log_statement} 
+      pmSharedBuffers: ${pm_shared_buffers} 
+      pmWorkMem: ${pm_work_mem} 
+      pmEffectiveCacheSize: ${pm_effective_cache_size}

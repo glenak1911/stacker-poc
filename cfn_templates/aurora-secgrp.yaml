@@ -1,0 +1,53 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  A basic CloudFormation template for RDS Aurora Cluster Security Groups.       
+
+Parameters:
+  SubnetIds:
+    Description: Subnet Ids for DB Subnet Group
+    Type: CommaDelimitedList
+  CidrIp:
+    Description: IP Address for security group ingress rule
+    Type: String
+  VpcId:
+    Description: Security Group VPC Id
+    Type: String
+
+Resources:
+
+  DBClusterSecGrp:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: "GK - Aurora DB Security Group"
+      GroupName: !Ref AWS::StackName
+      VpcId: !Ref VpcId
+
+  DBClusterIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties: 
+      CidrIp: !Ref CidrIp
+      GroupId: !GetAtt DBClusterSecGrp.GroupId
+      IpProtocol: tcp
+      ToPort: 5432
+      FromPort: 5432
+  
+  myDBSubnetGroup: 
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties: 
+      DBSubnetGroupName: !Ref AWS::StackName
+      DBSubnetGroupDescription: "GK Sandbox DB Subnet Group"
+      SubnetIds: !Ref SubnetIds
+
+Outputs:
+  DBClusterSecGrpName:
+    Description: The GroupId of the DB Cluster Security Group.
+    Value: !GetAtt DBClusterSecGrp.GroupId
+    Export:
+      Name: !Sub '${AWS::StackName}-DBClusterSecGroup'
+  DBClusterSubnetGroup:
+    Description: The name of the DB Cluster Subnet Group.
+    Value: !Ref myDBSubnetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-DBClusterSubnetGroup'

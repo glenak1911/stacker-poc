@@ -1,0 +1,376 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  A basic CloudFormation template for an RDS Aurora cluster.
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Basic RDS Aurora Postgres Information
+# Specify required RDS Aurora Postgres parameters
+        Parameters:
+          - DBInstanceClass
+          - DBName
+          - DBUser
+          - DBPassword
+          - DBPort
+          - DBEngineVer
+          - DBEngine
+          - DBClusterName
+          - DBBackupWindow
+          - DBMaintenanceWindow
+          - DBEncryption
+          - DBSnapShotID
+          - DBEngineMode
+          - DBSubnetGrp
+      - Label:
+          default: RDS Network Configuration
+# Specify Network and Security Information
+        Parameters:
+          - DBSecurityGroup
+      - Label:
+          default: RDS DB Cluster & Parameter Group
+# Specify Network and Security Information
+        Parameters:
+          - DBClusterParameterGrp
+          - DBParameterGroup 
+      - Label:
+         default: RDS Storage Configuration
+# Specify RDS Storage Information
+        Parameters:
+          - DBAllocatedStorage
+          - DBStorageType
+          - DBIops
+      - Label:
+         default: RDS Backup and Maintenance Information
+# Specify RDS Backup and Maintenance Information
+        Parameters:
+          - DBBackupRetention
+          - DBBackupWindow
+          - DBMaintenanceWindow
+      - Label:
+         default: RDS Monitoring Information
+# Specify RDS Monitoring Information
+        Parameters:
+          - DBMonitoringInterval
+# Specify the parameter labels
+    ParameterLabels:
+      DBName:
+        default: Database Username
+      DBPassword:
+        default: Database Password
+      DBSubnetGrp:
+        default: Database Subnets
+
+Parameters:
+  DBName:
+    AllowedPattern: "[a-zA-Z0-9]+"
+    ConstraintDescription: must be between 1 to 16 alphanumeric characters.
+    Description: The database admin account user name, between 1 to 16 alphanumeric characters.
+    MaxLength: '16'
+    MinLength: '1'
+    Type: String
+  DBUser:
+    Description: The database admin account username. Must contain only
+                 alphanumeric characters between 1 and 16 characters.
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    Default: 'adminuser'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    Description: Please provide Secure SSM parameter name which stores DB admin account password.
+    Type: String
+  DBPort:
+    Description: DB listening port. Must be between 1150 and 65535
+    Type: Number
+    MinValue: '1150'
+    MaxValue: '65535'
+    Default: '5432'
+    ConstraintDescription: Must be between 1150 and 65535
+  DBSnapShotID:
+    Description: Provide DB snapshot ID in ARN format to create database
+    Type: String
+    Default: ""
+  DBSecurityGroup:
+    Type: 'List<AWS::EC2::SecurityGroup::Id>'
+    ConstraintDescription: Must be to a security group which allows RDS access
+  DBSubnetGrp:
+    Type: String
+    ConstraintDescription: Must have DB Subnets
+  DBClusterName:
+    Description: Please provide DB Cluster Name.
+    Type: String
+    Default: 'default.aurora-postgresql9.6'
+  DBEngine:
+    Description: Please provide DB Engine.
+    Type: String
+    Default: 'aurora-postgresql'
+  DBEngineVer:
+    Description: The version number of the Aurora database engine
+    Type: String
+    Default: '9.6.9'
+    AllowedValues:
+      - '9.6.9'
+      - '9,6.10'
+  DBEngineMode:
+    Description: The DB engine mode of the DB cluster
+    Type: String
+    Default: 'provisioned'
+    AllowedValues:
+      - 'provisioned'
+      - 'serverless'
+  DBBackupRetention:
+    Description: The No. of Days to keep backup. Must be between 1 and 35
+    Type: Number
+    MinValue: '0'
+    MaxValue: '35'
+    Default: '1'
+    ConstraintDescription: Must be between 1 and 35
+  DBBackupWindow:
+    Description: The daily time range during which automated backups are
+                 performed as determined by the Backup Retention Period (DBBackupRetention).
+                 Must be in military format.
+                 Must be in Universal Coordinated Time (UTC) which in the
+                 EST time zone is an additional 4 hours (e.g 04:00 EST -> 08:00 UTC)
+                 Must not conflict with the preferred maintenance window (DBMaintenanceWindow).
+                 Must be at least 30 minutes (ex. 23:00-23:30)
+    Type: String
+    Default: '00:00-01:00'
+  DBMaintenanceWindow:
+    Description: The time range (UTC) each week during which system maintenance can occur.
+                 Must be in the Format ddd:hh24:mi-ddd:hh24:mi (ex. Sun:05:00-Sun:06:00)
+    Type: String
+    Default: 'Sun:01:00-Sun:02:00'
+  DBMonitoringInterval:
+    AllowedValues:
+     - '0'
+     - '1'
+     - '5'
+     - '10'
+     - '15'
+     - '30'
+     - '60'
+    Default: '0'
+    Description: The interval, in seconds, between points when Amazon RDS
+                 collects enhanced monitoring metrics for the DB instance.
+                 If you specify a value of 0 then enhanced monitoring will be
+                 disabled.
+    Type: Number
+  DBAllocatedStorage:
+    Description: The size of the database (Gb). Must be between 20 and 32768.
+    Type: Number
+    MinValue: '20'
+    MaxValue: '32768'
+    Default: '100'
+    ConstraintDescription: Must be between 20 and 16384Gb.
+  DBIops:
+    Default: '1000'
+    Description: Iops for Aurora Postgres (only used when storage type is io1). Must be
+                 between 1000 and 40000.
+    MaxValue: '40000'
+    MinValue: '1000'
+    Type: Number
+  DBStorageType:
+    AllowedValues:
+      - gp2
+      - io1
+    Default: gp2
+    Description: Database Storage Volume Type
+    Type: String
+  DBEncryption:
+    Type: String
+    Description: Indicates whether the DB instance is encrypted.
+    Default: 'true'
+    AllowedValues:
+    - 'true'
+    - 'false'
+  DBInstanceClass:
+    Description: The database instance type
+    Type: String
+    Default: 'db.r4.xlarge'
+    AllowedValues:
+      - db.r4.large
+      - db.r4.xlarge
+      - db.r4.2xlarge
+      - db.r4.4xlarge
+      - db.r4.10xlarge
+      - db.r4.16xlarge
+    ConstraintDescription: Must select a valid database instance type.
+  DBClusterParameterGrp:
+    Description: The database instance type
+    Type: String
+    Default: ''
+  DBParameterGroup:
+    Description: The database instance type
+    Type: String 
+  EnableCloudWatchAlarms:
+    Description: Enable creation of RDS CloudWatch Alarms
+    Type: String
+    AllowedValues:
+      - 'yes'
+      - 'no'
+    Default: 'no'
+###########################################################
+#   Conditions
+#   List of conditions that will be used to determine how
+#   and what resources will be created.
+###########################################################
+
+Conditions:
+# Detrmine if the Root volume type is io1 so that the Iops field
+# can be populated
+  NoEnhancedMonitoring:
+    'Fn::Equals':
+      - Ref: DBMonitoringInterval
+      - '0'
+  DBIo1Condition:
+    'Fn::Equals':
+      - Ref: DBStorageType
+      - io1
+  RestoreFromDBSnapShot: !Not
+      - !Equals ["", !Ref DBSnapShotID]
+  DataSubnetAvailable: !Not
+      - !Equals ["", !Ref DBSubnetGrp]
+
+Resources:
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    #DependsOn: DBClusterParameterGroup
+    Properties:
+      DBClusterIdentifier: !Ref DBClusterName
+      DatabaseName: !Ref DBName
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref DBEngineVer
+      EngineMode: !Ref DBEngineMode
+      DBClusterParameterGroupName: !Ref DBClusterParameterGrp
+      MasterUsername: !Ref DBUser
+      MasterUserPassword:
+        'Fn::Join':
+          - ''
+          - - '{{resolve:ssm-secure:'
+            - Ref: DBPassword
+            - ':1}}'
+      BackupRetentionPeriod: !Ref DBBackupRetention
+      Port: !Ref DBPort
+      PreferredBackupWindow: !Ref DBBackupWindow
+      PreferredMaintenanceWindow: !Ref DBMaintenanceWindow
+      StorageEncrypted: !Ref DBEncryption
+      SnapshotIdentifier:
+        'Fn::If':
+          - RestoreFromDBSnapShot
+          - Ref: DBSnapShotID
+          - Ref: 'AWS::NoValue'
+      DBSubnetGroupName: 
+        'Fn::If':
+          - DataSubnetAvailable 
+          - Ref: DBSubnetGrp
+          - Ref: 'AWS::NoValue'
+      VpcSecurityGroupIds: !Ref DBSecurityGroup
+
+  DatabasePrimaryInstance:
+    Type: AWS::RDS::DBInstance
+    DependsOn: DBCluster
+    Properties:
+      Engine: !Ref DBEngine
+      DBParameterGroupName: !Ref DBParameterGroup
+      EngineVersion: !Ref DBEngineVer
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      DBSubnetGroupName: 
+        'Fn::If':
+          - DataSubnetAvailable 
+          - Ref: DBSubnetGrp
+          - Ref: 'AWS::NoValue'
+
+  DatabaseReplicaInstance:
+    Type: AWS::RDS::DBInstance
+    DependsOn: DBCluster
+    Properties:
+      Engine: !Ref DBEngine
+      DBParameterGroupName: !Ref DBParameterGroup
+      EngineVersion: !Ref DBEngineVer
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: false
+      CopyTagsToSnapshot: true
+      DBSubnetGroupName: 
+        'Fn::If':
+          - DataSubnetAvailable 
+          - Ref: DBSubnetGrp
+          - Ref: 'AWS::NoValue'
+
+  DatabaseReplicaInstance2:
+    Type: AWS::RDS::DBInstance
+    DependsOn: DBCluster
+    Properties:
+      Engine: !Ref DBEngine
+      DBParameterGroupName: !Ref DBParameterGroup
+      EngineVersion: !Ref DBEngineVer
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: false
+      CopyTagsToSnapshot: true
+      DBSubnetGroupName: 
+        'Fn::If':
+          - DataSubnetAvailable 
+          - Ref: DBSubnetGrp
+          - Ref: 'AWS::NoValue'
+
+Outputs:
+  ClusterName:
+    Description: 'The name of the cluster.'
+    Value: !Ref DBCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterName'
+  DNSName:
+    Description: 'The connection endpoint for the DB cluster.'
+    Value: !GetAtt 'DBCluster.Endpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+  ReadDNSName:
+    Description: 'The reader endpoint for the DB cluster.'
+    Value: !GetAtt 'DBCluster.ReadEndpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-ReadDNSName'
+  JDBCConnectionString:
+    Description: JDBC connection string for database
+    Value:
+      Fn::Join:
+      - ''
+      - - jdbc:postgresql://
+        - Fn::GetAtt:
+          - DatabaseReplicaInstance
+          - Endpoint.Address
+        - ":"
+        - Fn::GetAtt:
+          - DatabaseReplicaInstance
+          - Endpoint.Port
+        - "/"
+        - Ref: DBName
+    Export:
+      Name: !Sub '${AWS::StackName}-JDBCConnectionString'
+  ReaderEndPoint:
+    Description: Reader EndPoint for the cluster
+    Value:
+      Fn::GetAtt:
+         - DBCluster
+         - ReadEndpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-ReaderEndPoint' 
+  WriterEndPoint:
+    Description: Writer EndPoint for the cluster
+    Value:
+       Fn::GetAtt: 
+        - DBCluster
+        - Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-WriterEndPoint'
