@@ -27,7 +27,7 @@ stacks:
   # allowing CloudFormation in other accounts to fetch templates from it.
   
   - name: stacker-aurora-secgrp
-    profile: gknight
+    #profile: gknight
     template_path: cfn_templates/aurora-secgrp.yaml
     enabled: true
     locked: false
@@ -39,7 +39,7 @@ stacks:
       VpcId: ${VpcId}
 
   - name: stacker-aurora1
-    profile: gknight
+    #profile: gknight
     template_path: cfn_templates/aurora.yaml
     enabled: true
     locked: false
@@ -79,7 +79,7 @@ stacks:
 
     
   - name: stacker-aurora-dbcluster-parameter
-    profile: gknight
+    #profile: gknight
     template_path: cfn_templates/aurora-dbcluster-parameter.yaml
     enabled: true
     locked: false
@@ -95,7 +95,7 @@ stacks:
       pmClusterLogStatement: ${pmClusterLogStatement}
 
   - name: stacker-aurora-db-parameter
-    profile: gknight
+    #profile: gknight
     template_path: cfn_templates/aurora-db-parameter.yaml
     enabled: true
     locked: false
